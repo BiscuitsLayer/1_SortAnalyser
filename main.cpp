@@ -1,9 +1,13 @@
+#include "sorts/sorts.hpp"
+
+    //   SFML   //
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
 
     //  TRAITS  //
 #include "fonts/traits.hpp"
 #include "textures/traits.hpp"
+#include "logint/logint.hpp"
 
 class Button : public sf::Drawable {
 public:
@@ -111,22 +115,49 @@ int main()
     text.setOrigin ({fontParams::posX, fontParams::posY});
 
     Button *buttons = new Button (texture, rect.getPosition (), rect.getSize (), text);
-
+    
     while (window.isOpen ())
     {
         sf::Event event;
         while (window.pollEvent (event))
         {
             buttons[0].MouseCheck (window, sf::Mouse::isButtonPressed (sf::Mouse::Button::Left));
-
+            /*
             if (event.type == sf::Event::Closed || 
                 sf::Keyboard::isKeyPressed (sf::Keyboard::Key::Q) ||
                 sf::Keyboard::isKeyPressed (sf::Keyboard::Key::Escape))
+            */
+            if (sf::Mouse::isButtonPressed (sf::Mouse::Button::Left))
                 window.close ();
         } 
       
         Draw (window, buttons, 1);
     }
+    
+    size_t size = 5;
+    LogInt *test = new LogInt [5];
+    test[0] = 2;
+    test[1] = 4;
+    test[2] = 3;
+    test[3] = 5;
+    test[4] = 1;
+    
+    /*
+    size_t size = 2;
+    LogInt *test = new LogInt [2];
+    test[0] = 2;
+    test[1] = 1;
+    */
+    sorts::BogoSort (test, test + size - 1);
+
+    for (size_t i = 0; i < size; ++i)
+        std::cout << test[i].data_ << ' ';
+    std::cout << std::endl;
+
+    for (size_t i = 0; i < size; ++i)
+        std::cout << "Cmp: "  << test[i].GetCounter ().first << ' '
+                  << "Swap: " << test[i].GetCounter ().second << std::endl;
 
     return 0;
 }
+
