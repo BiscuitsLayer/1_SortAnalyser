@@ -3,6 +3,7 @@
 
     //  TRAITS  //
 #include "fonts/traits.hpp"
+#include "textures/traits.hpp"
 
 class Button : public sf::Drawable {
 public:
@@ -12,7 +13,11 @@ public:
         text_ (text)
         {
             rect_.setPosition (position);
-            rect_.setTexture (&texture_);
+            rect_.setTexture (&texture_);     
+
+            using namespace textureParams;
+            rect_.setTextureRect (sf::Rect <int> (posX, posY, sizeX, sizeY));
+
             text_.setPosition (position);
         }
     Button ():
@@ -23,16 +28,39 @@ public:
             text_.setString ("Sample text");
         }
     ~Button () = default;
-    sf::Vector2f GetPosition () {
+    sf::Vector2f GetPosition () const {
         return rect_.getPosition ();
     }
-    sf::Vector2f GetSize () {
+    sf::Vector2f GetSize () const {
         return rect_.getSize ();
+    }
+    void MouseCheck (sf::RenderWindow &window, bool isButtonPressed) {
+        using namespace textureParams;
+        if (OnMouse (window)) {
+            if (isButtonPressed)
+                rect_.setTextureRect (sf::Rect <int> (posX, posYPressed, sizeX, sizeY));
+            else
+                rect_.setTextureRect (sf::Rect <int> (posX, posYOnMouse, sizeX, sizeY));
+        }
+        else 
+            rect_.setTextureRect (sf::Rect <int> (posX, posY, sizeX, sizeY));
     }
 private:
     sf::Texture texture_ = {};
     sf::RectangleShape rect_;
     sf::Text text_ = {};
+
+    bool OnMouse (sf::RenderWindow &window) {
+        sf::Vector2i mousePos = sf::Mouse::getPosition (window);
+        sf::Vector2f buttonPosLT = rect_.getPosition ();
+        sf::Vector2f buttonPosRB = buttonPosLT + rect_.getSize ();
+        if (mousePos.x > buttonPosLT.x && mousePos.x < buttonPosRB.x) {
+            if (mousePos.y > buttonPosLT.y && mousePos.y < buttonPosRB.y) {
+                return true;
+            }
+        }
+        return false;
+    }
     virtual void draw (sf::RenderTarget &target, sf::RenderStates states) const override {
         target.draw (rect_);
         target.draw (text_);
@@ -67,9 +95,9 @@ int main()
     sf::RenderWindow window (sf::VideoMode(500, 500), "Sort Analyser");
 
     sf::Texture texture = {};
-    texture.loadFromFile ("textures/ice.jpg");
+    texture.loadFromFile ("textures/blue.png");
 
-    sf::RectangleShape rect ({100.f, 100.f});
+    sf::RectangleShape rect ({250, 40});
     rect.setTexture (&texture);
 
     sf::Font font;
@@ -79,6 +107,8 @@ int main()
     text.setString ("KNOPKA");
     text.setColor (sf::Color::White);
     text.setFont (font);
+    text.setCharacterSize (fontParams::charSize);
+    text.setOrigin ({fontParams::posX, fontParams::posY});
 
     Button *buttons = new Button (texture, rect.getPosition (), rect.getSize (), text);
 
@@ -87,10 +117,14 @@ int main()
         sf::Event event;
         while (window.pollEvent (event))
         {
-            if (event.type == sf::Event::Closed)
-                window.close ();
-        }
+            buttons[0].MouseCheck (window, sf::Mouse::isButtonPressed (sf::Mouse::Button::Left));
 
+            if (event.type == sf::Event::Closed || 
+                sf::Keyboard::isKeyPressed (sf::Keyboard::Key::Q) ||
+                sf::Keyboard::isKeyPressed (sf::Keyboard::Key::Escape))
+                window.close ();
+        } 
+      
         Draw (window, buttons, 1);
     }
 
