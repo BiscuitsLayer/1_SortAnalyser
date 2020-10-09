@@ -1,3 +1,6 @@
+#include <vector>
+#include <map>
+
 #include "sorts/sorts.hpp"
 
     //   SFML   //
@@ -9,13 +12,47 @@
 #include "textures/traits.hpp"
 #include "logint/logint.hpp"
 
+class Widget {
+
+};
+
+class WidgetManager {
+public:
+    static WidgetManager& GetManager() {
+        static WidgetManager instance_;
+        return instance_;
+    }
+    void AddWidget (Widget *w);
+private:
+    WidgetManager () {};
+    WidgetManager (const WidgetManager&);
+    WidgetManager& operator = (const WidgetManager&);
+    std::vector <Widget *> widgets_ = {};
+};
+
+void WidgetManager::AddWidget (Widget *w) {
+    widgets_.push_back (w);
+}
+
+enum class ButtonColor {
+    BLUE = 0,
+    PURPLE = 1
+};
+
+std::map <ButtonColor, std::string> colorsToFiles = {
+    { ButtonColor::BLUE,   "textures/blue.png" },
+    { ButtonColor::PURPLE, "textures/purple.png" }
+};
+
 class Button : public sf::Drawable {
 public:
-    Button (sf::Texture texture, sf::Vector2f position, sf::Vector2f size, sf::Text text):
-        texture_ (texture),
+    Button (ButtonColor color, sf::Vector2f position, sf::Vector2f size, sf::Text text, SortType sort):
+        texture_ ({}),
         rect_ ({size}),
-        text_ (text)
+        text_ (text),
+        sort_ (sort)
         {
+            texture_.loadFromFile (colorsToFiles [color]);
             rect_.setPosition (position);
             rect_.setTexture (&texture_);     
 
@@ -24,20 +61,26 @@ public:
 
             text_.setPosition (position);
         }
+
     Button ():
         texture_ ({}),
         rect_ (), 
-        text_ ()
+        text_ (),
+        sort_ ({})
         {
             text_.setString ("Sample text");
         }
+
     ~Button () = default;
+
     sf::Vector2f GetPosition () const {
         return rect_.getPosition ();
     }
+
     sf::Vector2f GetSize () const {
         return rect_.getSize ();
     }
+
     void MouseCheck (sf::RenderWindow &window, bool isButtonPressed) {
         using namespace textureParams;
         if (OnMouse (window)) {
@@ -53,6 +96,7 @@ private:
     sf::Texture texture_ = {};
     sf::RectangleShape rect_;
     sf::Text text_ = {};
+    SortType sort_ = {};
 
     bool OnMouse (sf::RenderWindow &window) {
         sf::Vector2i mousePos = sf::Mouse::getPosition (window);
@@ -65,12 +109,17 @@ private:
         }
         return false;
     }
+    
+    void onClick () {
+        //  Создаёт event о нажатии, отправляет его в WidgetManager
+    }
+
     virtual void draw (sf::RenderTarget &target, sf::RenderStates states) const override {
         target.draw (rect_);
         target.draw (text_);
     }
 };
-
+/*
 class Window {
 public:
     Window (size_t capacity):
@@ -85,7 +134,7 @@ private:
     Button *buttons_ = nullptr;
     size_t capacity_ = 0;    
 };
-
+*/
 void Draw (sf::RenderWindow& window, sf::Drawable *drawables, size_t drawablesSize) {
     window.clear ();
     for (size_t i = 0; i < drawablesSize; ++i) {
@@ -96,6 +145,10 @@ void Draw (sf::RenderWindow& window, sf::Drawable *drawables, size_t drawablesSi
 
 int main()
 {
+    WidgetManager &manager = WidgetManager::GetManager ();
+    SortType quickSort { "QUICK SORT", sorts::QuickSort };
+    
+    //
     sf::RenderWindow window (sf::VideoMode(500, 500), "Sort Analyser");
 
     sf::Texture texture = {};
@@ -114,7 +167,8 @@ int main()
     text.setCharacterSize (fontParams::charSize);
     text.setOrigin ({fontParams::posX, fontParams::posY});
 
-    Button *buttons = new Button (texture, rect.getPosition (), rect.getSize (), text);
+    Button *buttons = new Button (ButtonColor::PURPLE, rect.getPosition (), 
+            rect.getSize (), text, quickSort);
     
     while (window.isOpen ())
     {
@@ -122,11 +176,11 @@ int main()
         while (window.pollEvent (event))
         {
             buttons[0].MouseCheck (window, sf::Mouse::isButtonPressed (sf::Mouse::Button::Left));
-            /*
+            
             if (event.type == sf::Event::Closed || 
                 sf::Keyboard::isKeyPressed (sf::Keyboard::Key::Q) ||
                 sf::Keyboard::isKeyPressed (sf::Keyboard::Key::Escape))
-            */
+            
             if (sf::Mouse::isButtonPressed (sf::Mouse::Button::Left))
                 window.close ();
         } 
@@ -142,14 +196,8 @@ int main()
     test[3] = 5;
     test[4] = 1;
     
+    //sorts::BogoSort (test, test + size - 1);
     /*
-    size_t size = 2;
-    LogInt *test = new LogInt [2];
-    test[0] = 2;
-    test[1] = 1;
-    */
-    sorts::BogoSort (test, test + size - 1);
-
     for (size_t i = 0; i < size; ++i)
         std::cout << test[i].data_ << ' ';
     std::cout << std::endl;
@@ -157,7 +205,8 @@ int main()
     for (size_t i = 0; i < size; ++i)
         std::cout << "Cmp: "  << test[i].GetCounter ().first << ' '
                   << "Swap: " << test[i].GetCounter ().second << std::endl;
-
+    */
+    
     return 0;
 }
 
